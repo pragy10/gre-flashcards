@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Play, 
   RotateCcw, 
@@ -9,11 +9,10 @@ import {
   Clock, 
   Sparkles,
   Shuffle,
-  Eye,
-  EyeOff
+  Trash2
 } from 'lucide-react';
 
-export default function FlashcardPlayer({ day, cards, onUpdateStatus, onExit }) {
+export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCard, onExit }) {
   const [deck, setDeck] = useState(cards);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -22,9 +21,9 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onExit }) 
 
   useEffect(() => {
     setDeck(cards);
-    setCurrentIndex(0);
-    setIsFlipped(false);
-    setShowMnemonic(false);
+    if (currentIndex >= cards.length) {
+      setCurrentIndex(Math.max(0, cards.length - 1));
+    }
   }, [cards]);
 
   const currentCard = deck[currentIndex];
@@ -54,6 +53,15 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onExit }) 
     setDeck(shuffled);
     setCurrentIndex(0);
     setIsFlipped(false);
+  };
+
+  const handleDeleteCurrent = () => {
+    if (!currentCard) return;
+    if (window.confirm(`Delete "${currentCard.word}"?`)) {
+      if (onDeleteCard) {
+        onDeleteCard(currentCard.id);
+      }
+    }
   };
 
   const handleSpeak = (e, text) => {
@@ -87,10 +95,10 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onExit }) 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, isFlipped, deck.length]);
 
-  if (!currentCard) {
+  if (!currentCard || deck.length === 0) {
     return (
       <div className="text-center py-24 bg-white rounded-2xl border border-stone-200">
-        <p className="text-stone-500 text-sm">No cards available in this day session.</p>
+        <p className="text-stone-500 text-sm">No cards remaining in this session.</p>
         <button
           onClick={onExit}
           className="mt-4 px-4 py-2 text-xs uppercase tracking-wider text-stone-800 border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
@@ -115,7 +123,19 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onExit }) 
           <span>Back to Day {day.dayNumber}</span>
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Top Delete Card Button */}
+          {onDeleteCard && (
+            <button
+              onClick={handleDeleteCurrent}
+              title="Delete this card"
+              className="p-1.5 rounded-md text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors flex items-center gap-1"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Delete Card</span>
+            </button>
+          )}
+
           <button
             onClick={handleShuffle}
             title="Shuffle Deck"
@@ -124,6 +144,7 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onExit }) 
             <Shuffle className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Shuffle</span>
           </button>
+
           <span>
             {currentIndex + 1} / {deck.length}
           </span>
@@ -192,7 +213,7 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onExit }) 
               </span>
             </div>
 
-            <div className="py-2 space-y-4">
+            <div className="py-2 space-y-3.5">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 block mb-1">
                   Definition
@@ -224,6 +245,22 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onExit }) 
                       className="text-[11px] font-mono text-stone-600 bg-stone-100 px-2 py-0.5 rounded"
                     >
                       {syn}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {currentCard.antonyms && currentCard.antonyms.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 mr-1">
+                    Antonyms:
+                  </span>
+                  {currentCard.antonyms.map((ant, i) => (
+                    <span 
+                      key={i} 
+                      className="text-[11px] font-mono text-stone-500 bg-stone-50 border border-stone-200 px-2 py-0.5 rounded"
+                    >
+                      {ant}
                     </span>
                   ))}
                 </div>

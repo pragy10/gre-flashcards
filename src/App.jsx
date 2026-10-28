@@ -273,6 +273,7 @@ export default function App() {
             day={playerMode === 'all' ? { id: 'all', dayNumber: 'All' } : currentDay}
             cards={playerDeck}
             onUpdateStatus={handleUpdateStatus}
+            onDeleteCard={handleDeleteCard}
             onExit={() => setIsPlaying(false)}
           />
         ) : (

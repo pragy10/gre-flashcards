@@ -45,7 +45,7 @@ export default function DayView({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Day Overview Banner */}
       <div className="bg-white border border-stone-200 rounded-2xl p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -63,7 +63,7 @@ export default function DayView({
             </h2>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <button
               onClick={() => onStartStudy(day)}
               disabled={cards.length === 0}
@@ -78,6 +78,13 @@ export default function DayView({
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Word</span>
+            </button>
+            <button
+              onClick={onDeleteDay}
+              title="Delete this entire day session"
+              className="p-2.5 text-stone-400 hover:text-red-600 hover:bg-red-50 border border-stone-200 rounded-xl transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -212,9 +219,20 @@ export default function DayView({
                         ))}
                       </div>
                     )}
+
+                    {card.antonyms && card.antonyms.length > 0 && (
+                      <div className="flex flex-wrap gap-1 items-center pt-0.5">
+                        <span className="text-[10px] font-mono uppercase text-stone-400">Antonyms:</span>
+                        {card.antonyms.map((a, i) => (
+                          <span key={i} className="text-[11px] font-mono text-stone-500 bg-stone-50 border border-stone-200 px-1.5 py-0.5 rounded">
+                            {a}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Actions */}
+                  {/* Individual Card Actions */}
                   <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => onEditCard(card)}
@@ -236,17 +254,6 @@ export default function DayView({
             ))}
           </div>
         )}
-      </div>
-
-      {/* Danger Zone: Delete Day */}
-      <div className="pt-8 border-t border-stone-200 flex justify-end">
-        <button
-          onClick={onDeleteDay}
-          className="text-xs font-mono text-stone-400 hover:text-red-600 flex items-center gap-1.5 transition-colors"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          <span>Delete Day {day.dayNumber} and its cards</span>
-        </button>
       </div>
     </div>
   );
