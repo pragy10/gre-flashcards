@@ -15,7 +15,8 @@ import {
   CloudOff,
   Sparkles,
   Sun,
-  Moon
+  Moon,
+  HelpCircle
 } from 'lucide-react';
 import { INITIAL_DAYS, STORAGE_KEY } from './data/sampleData';
 import { fetchDays, saveDayToCloud, syncAllDaysToCloud, deleteDayFromCloud } from './services/api';
@@ -23,6 +24,7 @@ import DayView from './components/DayView';
 import FlashcardPlayer from './components/FlashcardPlayer';
 import CardModal from './components/CardModal';
 import DayModal from './components/DayModal';
+import QuizModal from './components/QuizModal';
 
 const THEME_KEY = "gre_theme_mode";
 
@@ -73,6 +75,8 @@ export default function App() {
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
   const [isDayModalOpen, setIsDayModalOpen] = useState(false);
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+  const [quizDay, setQuizDay] = useState(null);
 
   // Initial load from cloud (MongoDB API) with local fallback
   useEffect(() => {
@@ -218,6 +222,12 @@ export default function App() {
       setIsPlaying(false);
       syncAllDaysToCloud(INITIAL_DAYS);
     }
+  };
+
+  // Quiz launcher
+  const handleStartQuiz = (day) => {
+    setQuizDay(day);
+    setIsQuizModalOpen(true);
   };
 
   // Cards for player
@@ -467,6 +477,7 @@ export default function App() {
                     setPlayerMode('day');
                     setIsPlaying(true);
                   }}
+                  onStartQuiz={handleStartQuiz}
                   onAddCard={() => {
                     setEditingCard(null);
                     setIsCardModalOpen(true);
@@ -510,6 +521,16 @@ export default function App() {
         onClose={() => setIsDayModalOpen(false)}
         onCreateDay={handleCreateDay}
         nextDayNumber={(days.length ? Math.max(...days.map(d => d.dayNumber || 0)) : 0) + 1}
+      />
+
+      <QuizModal
+        isOpen={isQuizModalOpen}
+        onClose={() => {
+          setIsQuizModalOpen(false);
+          setQuizDay(null);
+        }}
+        day={quizDay}
+        allDays={days}
       />
     </div>
   );

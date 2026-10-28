@@ -10,12 +10,14 @@ import {
   CircleDot,
   Calendar,
   Layers,
-  ChevronDown
+  ChevronDown,
+  HelpCircle
 } from 'lucide-react';
 
 export default function DayView({ 
   day, 
   onStartStudy, 
+  onStartQuiz,
   onAddCard, 
   onEditCard, 
   onDeleteCard,
@@ -71,6 +73,15 @@ export default function DayView({
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>Study Deck ({cards.length})</span>
+            </button>
+            <button
+              onClick={() => onStartQuiz(day)}
+              disabled={cards.length === 0}
+              title="Take a multiple choice synonym test for this day"
+              className="px-3.5 py-2.5 border border-stone-200 dark:border-[#38332e] hover:border-stone-300 dark:hover:border-stone-500 bg-white dark:bg-[#1c1a18] text-stone-800 dark:text-stone-200 rounded-xl text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-colors disabled:opacity-40 shadow-xs"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Take Test</span>
             </button>
             <button
               onClick={onAddCard}
