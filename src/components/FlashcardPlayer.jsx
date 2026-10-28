@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Play, 
   RotateCcw, 
@@ -97,11 +97,11 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
 
   if (!currentCard || deck.length === 0) {
     return (
-      <div className="text-center py-24 bg-white rounded-2xl border border-stone-200">
-        <p className="text-stone-500 text-sm">No cards remaining in this session.</p>
+      <div className="text-center py-24 bg-white dark:bg-[#1c1a18] rounded-2xl border border-stone-200 dark:border-[#2f2b28]">
+        <p className="text-stone-500 dark:text-stone-400 text-sm">No cards remaining in this session.</p>
         <button
           onClick={onExit}
-          className="mt-4 px-4 py-2 text-xs uppercase tracking-wider text-stone-800 border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
+          className="mt-4 px-4 py-2 text-xs uppercase tracking-wider text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 rounded-lg hover:bg-stone-50 dark:hover:bg-[#282522] transition-colors"
         >
           Back to List
         </button>
@@ -114,22 +114,21 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Top Header Controls */}
-      <div className="flex items-center justify-between text-xs text-stone-500 font-mono">
+      <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 font-mono">
         <button
           onClick={onExit}
-          className="hover:text-stone-900 transition-colors flex items-center gap-1.5"
+          className="hover:text-stone-900 dark:hover:text-stone-100 transition-colors flex items-center gap-1.5"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
           <span>Back to Day {day.dayNumber}</span>
         </button>
 
         <div className="flex items-center gap-2">
-          {/* Top Delete Card Button */}
           {onDeleteCard && (
             <button
               onClick={handleDeleteCurrent}
               title="Delete this card"
-              className="p-1.5 rounded-md text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors flex items-center gap-1"
+              className="p-1.5 rounded-md text-stone-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-1"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Delete Card</span>
@@ -139,7 +138,7 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
           <button
             onClick={handleShuffle}
             title="Shuffle Deck"
-            className="p-1.5 rounded-md hover:text-stone-900 hover:bg-stone-100 transition-colors flex items-center gap-1"
+            className="p-1.5 rounded-md hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-[#282522] transition-colors flex items-center gap-1"
           >
             <Shuffle className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Shuffle</span>
@@ -152,9 +151,9 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-stone-200 h-1 rounded-full overflow-hidden">
+      <div className="w-full bg-stone-200 dark:bg-[#2f2b28] h-1 rounded-full overflow-hidden">
         <div 
-          className="bg-stone-800 h-full transition-all duration-300 ease-out"
+          className="bg-stone-800 dark:bg-stone-300 h-full transition-all duration-300 ease-out"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -165,21 +164,21 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
         onClick={handleFlip}
       >
         <div 
-          className={`relative w-full h-[380px] rounded-2xl transition-transform duration-500 transform-style-3d border border-stone-200 shadow-sm ${
+          className={`relative w-full h-[380px] rounded-2xl transition-transform duration-500 transform-style-3d border border-stone-200 dark:border-[#2f2b28] shadow-sm ${
             isFlipped ? 'rotate-y-180' : ''
           }`}
         >
           {/* Card Front */}
-          <div className="absolute inset-0 w-full h-full backface-hidden bg-white rounded-2xl p-8 flex flex-col justify-between">
-            <div className="flex items-center justify-between text-stone-400">
+          <div className="absolute inset-0 w-full h-full backface-hidden bg-white dark:bg-[#1c1a18] rounded-2xl p-8 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-stone-400 dark:text-stone-500">
               <span className="text-xs uppercase tracking-widest font-mono">
                 {currentCard.partOfSpeech || 'word'}
               </span>
               <button
                 type="button"
                 onClick={(e) => handleSpeak(e, currentCard.word)}
-                className={`p-2 rounded-full hover:bg-stone-100 text-stone-500 hover:text-stone-900 transition-colors ${
-                  isSpeaking ? 'text-stone-900' : ''
+                className={`p-2 rounded-full hover:bg-stone-100 dark:hover:bg-[#282522] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors ${
+                  isSpeaking ? 'text-stone-900 dark:text-stone-100' : ''
                 }`}
                 title="Pronounce"
               >
@@ -188,47 +187,47 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
             </div>
 
             <div className="text-center py-6">
-              <h2 className="text-4xl sm:text-5xl font-serif font-normal tracking-tight text-stone-900 mb-2">
+              <h2 className="text-4xl sm:text-5xl font-serif font-normal tracking-tight text-stone-900 dark:text-stone-100 mb-2">
                 {currentCard.word}
               </h2>
-              <p className="text-stone-400 text-xs font-mono">Click card or press Space to reveal</p>
+              <p className="text-stone-400 dark:text-stone-500 text-xs font-mono">Click card or press Space to reveal</p>
             </div>
 
-            <div className="flex justify-between items-center text-xs text-stone-400 font-mono">
+            <div className="flex justify-between items-center text-xs text-stone-400 dark:text-stone-500 font-mono">
               <span className="capitalize">Status: {currentCard.status || 'new'}</span>
-              <span className="text-[11px] bg-stone-100 text-stone-600 px-2.5 py-1 rounded">
+              <span className="text-[11px] bg-stone-100 dark:bg-[#282522] text-stone-600 dark:text-stone-300 px-2.5 py-1 rounded">
                 Front
               </span>
             </div>
           </div>
 
           {/* Card Back */}
-          <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 bg-[#fdfdfc] rounded-2xl p-8 flex flex-col justify-between overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-              <span className="font-serif text-lg font-medium text-stone-900">
+          <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 bg-[#fdfdfc] dark:bg-[#181614] rounded-2xl p-8 flex flex-col justify-between overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-stone-100 dark:border-[#2f2b28] pb-3">
+              <span className="font-serif text-lg font-medium text-stone-900 dark:text-stone-100">
                 {currentCard.word}
               </span>
-              <span className="text-[11px] font-mono uppercase text-stone-400">
+              <span className="text-[11px] font-mono uppercase text-stone-400 dark:text-stone-500">
                 {currentCard.partOfSpeech}
               </span>
             </div>
 
             <div className="py-2 space-y-3.5">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 block mb-1">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 dark:text-stone-500 block mb-1">
                   Definition
                 </span>
-                <p className="text-stone-800 text-base leading-relaxed">
+                <p className="text-stone-800 dark:text-stone-200 text-base leading-relaxed">
                   {currentCard.definition}
                 </p>
               </div>
 
               {currentCard.example && (
                 <div>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 block mb-1">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 dark:text-stone-500 block mb-1">
                     Example
                   </span>
-                  <p className="text-stone-600 text-xs italic leading-relaxed border-l-2 border-stone-200 pl-3">
+                  <p className="text-stone-600 dark:text-stone-400 text-xs italic leading-relaxed border-l-2 border-stone-200 dark:border-stone-700 pl-3">
                     "{currentCard.example}"
                   </p>
                 </div>
@@ -236,13 +235,13 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
 
               {currentCard.synonyms && currentCard.synonyms.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 items-center pt-1">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 mr-1">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 dark:text-stone-500 mr-1">
                     Synonyms:
                   </span>
                   {currentCard.synonyms.map((syn, i) => (
                     <span 
                       key={i} 
-                      className="text-[11px] font-mono text-stone-600 bg-stone-100 px-2 py-0.5 rounded"
+                      className="text-[11px] font-mono text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-[#282522] px-2 py-0.5 rounded"
                     >
                       {syn}
                     </span>
@@ -252,13 +251,13 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
 
               {currentCard.antonyms && currentCard.antonyms.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 mr-1">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 dark:text-stone-500 mr-1">
                     Antonyms:
                   </span>
                   {currentCard.antonyms.map((ant, i) => (
                     <span 
                       key={i} 
-                      className="text-[11px] font-mono text-stone-500 bg-stone-50 border border-stone-200 px-2 py-0.5 rounded"
+                      className="text-[11px] font-mono text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-[#201d1a] border border-stone-200 dark:border-[#38332e] px-2 py-0.5 rounded"
                     >
                       {ant}
                     </span>
@@ -273,13 +272,13 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
                       e.stopPropagation();
                       setShowMnemonic(!showMnemonic);
                     }}
-                    className="text-xs text-stone-500 hover:text-stone-800 flex items-center gap-1.5 font-mono"
+                    className="text-xs text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 flex items-center gap-1.5 font-mono"
                   >
-                    <Sparkles className="w-3 h-3 text-stone-400" />
+                    <Sparkles className="w-3 h-3 text-stone-400 dark:text-stone-500" />
                     <span>{showMnemonic ? 'Hide Mnemonic' : 'Reveal Memory Aid'}</span>
                   </button>
                   {showMnemonic && (
-                    <p className="text-xs text-stone-600 font-mono mt-1.5 bg-stone-100/70 p-2.5 rounded-lg border border-stone-200">
+                    <p className="text-xs text-stone-600 dark:text-stone-300 font-mono mt-1.5 bg-stone-100/70 dark:bg-[#24211e] p-2.5 rounded-lg border border-stone-200 dark:border-[#38332e]">
                       💡 {currentCard.mnemonic}
                     </p>
                   )}
@@ -287,9 +286,9 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
               )}
             </div>
 
-            <div className="flex justify-between items-center text-xs text-stone-400 font-mono border-t border-stone-100 pt-3">
-              <span className="text-[11px] text-stone-400">Click to flip back</span>
-              <span className="text-[11px] bg-stone-200/60 text-stone-700 px-2.5 py-1 rounded">
+            <div className="flex justify-between items-center text-xs text-stone-400 dark:text-stone-500 font-mono border-t border-stone-100 dark:border-[#2f2b28] pt-3">
+              <span className="text-[11px]">Click to flip back</span>
+              <span className="text-[11px] bg-stone-200/60 dark:bg-[#282522] text-stone-700 dark:text-stone-300 px-2.5 py-1 rounded">
                 Back
               </span>
             </div>
@@ -304,8 +303,8 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
             onClick={() => onUpdateStatus(day.id, currentCard.id, 'learning')}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors flex items-center gap-1.5 border ${
               currentCard.status === 'learning' 
-                ? 'border-stone-800 bg-stone-800 text-white' 
-                : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
+                ? 'border-stone-800 bg-stone-800 text-white dark:border-stone-200 dark:bg-stone-200 dark:text-stone-900' 
+                : 'border-stone-200 dark:border-[#38332e] bg-white dark:bg-[#1c1a18] text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600'
             }`}
           >
             <Clock className="w-3 h-3" />
@@ -316,8 +315,8 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
             onClick={() => onUpdateStatus(day.id, currentCard.id, 'mastered')}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors flex items-center gap-1.5 border ${
               currentCard.status === 'mastered' 
-                ? 'border-stone-800 bg-stone-800 text-white' 
-                : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
+                ? 'border-stone-800 bg-stone-800 text-white dark:border-stone-200 dark:bg-stone-200 dark:text-stone-900' 
+                : 'border-stone-200 dark:border-[#38332e] bg-white dark:bg-[#1c1a18] text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600'
             }`}
           >
             <Check className="w-3 h-3" />
@@ -330,7 +329,7 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
           <button
             onClick={handlePrev}
             disabled={currentIndex === 0}
-            className="p-2 border border-stone-200 bg-white rounded-lg text-stone-700 hover:bg-stone-50 disabled:opacity-30 disabled:hover:bg-white transition-colors"
+            className="p-2 border border-stone-200 dark:border-[#38332e] bg-white dark:bg-[#1c1a18] rounded-lg text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-[#282522] disabled:opacity-30 disabled:hover:bg-white dark:disabled:hover:bg-[#1c1a18] transition-colors"
             title="Previous (Left Arrow)"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -338,7 +337,7 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
           <button
             onClick={handleNext}
             disabled={currentIndex === deck.length - 1}
-            className="p-2 border border-stone-200 bg-white rounded-lg text-stone-700 hover:bg-stone-50 disabled:opacity-30 disabled:hover:bg-white transition-colors"
+            className="p-2 border border-stone-200 dark:border-[#38332e] bg-white dark:bg-[#1c1a18] rounded-lg text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-[#282522] disabled:opacity-30 disabled:hover:bg-white dark:disabled:hover:bg-[#1c1a18] transition-colors"
             title="Next (Right Arrow)"
           >
             <ChevronRight className="w-4 h-4" />
@@ -347,10 +346,10 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
       </div>
 
       {/* Keyboard Shortcuts Helper */}
-      <div className="text-center text-[11px] text-stone-400 font-mono">
-        Hotkeys: <kbd className="px-1.5 py-0.5 bg-stone-200/50 rounded border border-stone-300 text-stone-600">Space</kbd> Flip &nbsp;•&nbsp; 
-        <kbd className="px-1.5 py-0.5 bg-stone-200/50 rounded border border-stone-300 text-stone-600">←</kbd> Prev &nbsp;•&nbsp; 
-        <kbd className="px-1.5 py-0.5 bg-stone-200/50 rounded border border-stone-300 text-stone-600">→</kbd> Next
+      <div className="text-center text-[11px] text-stone-400 dark:text-stone-500 font-mono">
+        Hotkeys: <kbd className="px-1.5 py-0.5 bg-stone-200/50 dark:bg-[#282522] rounded border border-stone-300 dark:border-stone-700 text-stone-600 dark:text-stone-300">Space</kbd> Flip &nbsp;•&nbsp; 
+        <kbd className="px-1.5 py-0.5 bg-stone-200/50 dark:bg-[#282522] rounded border border-stone-300 dark:border-stone-700 text-stone-600 dark:text-stone-300">←</kbd> Prev &nbsp;•&nbsp; 
+        <kbd className="px-1.5 py-0.5 bg-stone-200/50 dark:bg-[#282522] rounded border border-stone-300 dark:border-stone-700 text-stone-600 dark:text-stone-300">→</kbd> Next
       </div>
     </div>
   );

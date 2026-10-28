@@ -13,7 +13,9 @@ import {
   Upload,
   Cloud,
   CloudOff,
-  Sparkles
+  Sparkles,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { INITIAL_DAYS, STORAGE_KEY } from './data/sampleData';
 import { fetchDays, saveDayToCloud, syncAllDaysToCloud, deleteDayFromCloud } from './services/api';
@@ -22,7 +24,34 @@ import FlashcardPlayer from './components/FlashcardPlayer';
 import CardModal from './components/CardModal';
 import DayModal from './components/DayModal';
 
+const THEME_KEY = "gre_theme_mode";
+
 export default function App() {
+  const [theme, setTheme] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) return savedTheme;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch (e) {
+      return 'light';
+    }
+  });
+
+  // Apply dark theme class to <html>
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
   const [days, setDays] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -197,28 +226,28 @@ export default function App() {
     : currentDay?.cards || [];
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] text-stone-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-[#faf9f6] dark:bg-[#141413] text-stone-900 dark:text-stone-100 font-sans flex flex-col transition-colors duration-200">
       {/* Minimal Header */}
-      <header className="border-b border-stone-200 bg-white/80 backdrop-blur-sm sticky top-0 z-30">
+      <header className="border-b border-stone-200 dark:border-[#2a2623] bg-white/80 dark:bg-[#1a1816]/80 backdrop-blur-sm sticky top-0 z-30 transition-colors">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="w-8 h-8 rounded-lg bg-stone-900 text-stone-100 flex items-center justify-center font-serif text-lg font-bold">
+            <span className="w-8 h-8 rounded-lg bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-950 flex items-center justify-center font-serif text-lg font-bold">
               GRE
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-sm font-semibold tracking-tight text-stone-900 leading-none">
+                <h1 className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-100 leading-none">
                   Lexicon
                 </h1>
                 {/* Cloud sync status indicator */}
                 <span 
                   title={isCloudSynced ? "Connected to MongoDB Atlas" : "Local mode (connect MongoDB Atlas for cloud sync)"}
-                  className="flex items-center gap-1 text-[10px] font-mono text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded"
+                  className="flex items-center gap-1 text-[10px] font-mono text-stone-400 bg-stone-100 dark:bg-[#282522] dark:text-stone-400 px-1.5 py-0.5 rounded"
                 >
                   {isCloudSynced ? (
                     <>
-                      <Cloud className="w-3 h-3 text-stone-700" />
-                      <span className="text-stone-700">Atlas</span>
+                      <Cloud className="w-3 h-3 text-stone-700 dark:text-stone-300" />
+                      <span className="text-stone-700 dark:text-stone-300">Atlas</span>
                     </>
                   ) : (
                     <>
@@ -228,17 +257,26 @@ export default function App() {
                   )}
                 </span>
               </div>
-              <span className="text-[10px] font-mono text-stone-400">Daily Flashcard Companion</span>
+              <span className="text-[10px] font-mono text-stone-400 dark:text-stone-500">Daily Flashcard Companion</span>
             </div>
           </div>
 
           {/* Quick Metrics & Actions */}
           <div className="flex items-center gap-3 text-xs font-mono">
-            <div className="hidden sm:flex items-center gap-4 text-stone-500 border-r border-stone-200 pr-4">
-              <span>Total: <strong className="text-stone-900">{totalCards}</strong></span>
-              <span>Mastered: <strong className="text-stone-900">{totalMastered}</strong></span>
-              <span>In Progress: <strong className="text-stone-900">{totalLearning}</strong></span>
+            <div className="hidden sm:flex items-center gap-4 text-stone-500 dark:text-stone-400 border-r border-stone-200 dark:border-[#2f2b28] pr-4">
+              <span>Total: <strong className="text-stone-900 dark:text-stone-100">{totalCards}</strong></span>
+              <span>Mastered: <strong className="text-stone-900 dark:text-stone-100">{totalMastered}</strong></span>
+              <span>In Progress: <strong className="text-stone-900 dark:text-stone-100">{totalLearning}</strong></span>
             </div>
+
+            {/* Dark Mode Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? "Switch to light theme" : "Switch to dark theme"}
+              className="p-1.5 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 rounded-lg hover:bg-stone-100 dark:hover:bg-[#282522] transition-colors"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
 
             {totalCards > 0 && !isPlaying && (
               <button
@@ -246,7 +284,7 @@ export default function App() {
                   setPlayerMode('all');
                   setIsPlaying(true);
                 }}
-                className="px-3 py-1.5 bg-stone-900 text-stone-50 rounded-lg hover:bg-stone-800 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-stone-900 text-stone-50 dark:bg-stone-100 dark:text-stone-900 rounded-lg hover:bg-stone-800 dark:hover:bg-white transition-colors flex items-center gap-1.5"
                 title="Review entire library"
               >
                 <Play className="w-3 h-3 fill-current" />
@@ -257,7 +295,7 @@ export default function App() {
             <button
               onClick={handleExportJSON}
               title="Export backup"
-              className="p-1.5 text-stone-400 hover:text-stone-700 rounded hover:bg-stone-100 transition-colors"
+              className="p-1.5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 rounded hover:bg-stone-100 dark:hover:bg-[#282522] transition-colors"
             >
               <Download className="w-4 h-4" />
             </button>
@@ -282,12 +320,12 @@ export default function App() {
             {/* Sidebar: Day Sessions List */}
             <aside className="md:col-span-4 lg:col-span-3 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs uppercase tracking-wider font-mono text-stone-400">
+                <span className="text-xs uppercase tracking-wider font-mono text-stone-400 dark:text-stone-500">
                   Study Days
                 </span>
                 <button
                   onClick={() => setIsDayModalOpen(true)}
-                  className="text-xs font-mono text-stone-800 hover:underline flex items-center gap-1"
+                  className="text-xs font-mono text-stone-800 dark:text-stone-200 hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>New Day</span>
@@ -307,24 +345,24 @@ export default function App() {
                       onClick={() => setActiveDayId(day.id)}
                       className={`w-full text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between ${
                         isSelected
-                          ? 'border-stone-800 bg-white shadow-xs ring-1 ring-stone-800'
-                          : 'border-stone-200 bg-white hover:border-stone-300'
+                          ? 'border-stone-800 bg-white dark:border-stone-400 dark:bg-[#1c1a18] shadow-xs ring-1 ring-stone-800 dark:ring-stone-400'
+                          : 'border-stone-200 dark:border-[#2f2b28] bg-white dark:bg-[#1c1a18] hover:border-stone-300 dark:hover:border-stone-600'
                       }`}
                     >
                       <div className="flex items-center justify-between w-full mb-1">
-                        <span className="font-serif font-medium text-stone-900 text-sm">
+                        <span className="font-serif font-medium text-stone-900 dark:text-stone-100 text-sm">
                           Day {day.dayNumber}
                         </span>
-                        <span className="text-[10px] font-mono text-stone-400">
+                        <span className="text-[10px] font-mono text-stone-400 dark:text-stone-500">
                           {dayCards.length} {dayCards.length === 1 ? 'word' : 'words'}
                         </span>
                       </div>
 
-                      <p className="text-xs text-stone-500 line-clamp-1 mb-2 font-light">
+                      <p className="text-xs text-stone-500 dark:text-stone-400 line-clamp-1 mb-2 font-light">
                         {day.title || `Vocabulary day ${day.dayNumber}`}
                       </p>
 
-                      <div className="flex items-center justify-between text-[10px] font-mono text-stone-400 pt-1 border-t border-stone-100">
+                      <div className="flex items-center justify-between text-[10px] font-mono text-stone-400 dark:text-stone-500 pt-1 border-t border-stone-100 dark:border-[#282522]">
                         <span>{day.createdAt}</span>
                         {dayCards.length > 0 && (
                           <span>
@@ -337,11 +375,11 @@ export default function App() {
                 })}
 
                 {days.length === 0 && (
-                  <div className="p-4 border border-dashed border-stone-300 rounded-xl text-center">
+                  <div className="p-4 border border-dashed border-stone-300 dark:border-stone-700 rounded-xl text-center">
                     <p className="text-xs text-stone-400 font-mono mb-2">No days added yet.</p>
                     <button
                       onClick={() => setIsDayModalOpen(true)}
-                      className="text-xs font-mono text-stone-800 underline"
+                      className="text-xs font-mono text-stone-800 dark:text-stone-200 underline"
                     >
                       Create Day 1
                     </button>
@@ -350,10 +388,10 @@ export default function App() {
               </div>
 
               {/* Quick Actions Footer in Sidebar */}
-              <div className="pt-4 border-t border-stone-200 space-y-2">
+              <div className="pt-4 border-t border-stone-200 dark:border-[#2f2b28] space-y-2">
                 <button
                   onClick={handleResetSampleData}
-                  className="w-full text-left px-2 py-1.5 text-[11px] font-mono text-stone-400 hover:text-stone-700 transition-colors flex items-center gap-1.5"
+                  className="w-full text-left px-2 py-1.5 text-[11px] font-mono text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition-colors flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>Restore Sample GRE Deck</span>
@@ -365,18 +403,18 @@ export default function App() {
             <section className="md:col-span-8 lg:col-span-9 space-y-6">
               {/* Search Bar */}
               <div className="relative">
-                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
                 <input
                   type="text"
                   placeholder="Search across all days (word, definition, synonym)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-stone-800 transition-colors"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#1c1a18] border border-stone-200 dark:border-[#2f2b28] text-stone-900 dark:text-stone-100 rounded-xl text-sm focus:outline-none focus:border-stone-800 dark:focus:border-stone-400 transition-colors"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-stone-400 hover:text-stone-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
                   >
                     Clear
                   </button>
@@ -386,11 +424,11 @@ export default function App() {
               {/* Search Results Display if active */}
               {searchQuery.trim() !== '' ? (
                 <div className="space-y-3">
-                  <div className="text-xs font-mono text-stone-500">
+                  <div className="text-xs font-mono text-stone-500 dark:text-stone-400">
                     Search Results ({searchResults.length})
                   </div>
                   {searchResults.length === 0 ? (
-                    <div className="text-center py-12 bg-white rounded-2xl border border-stone-200 text-stone-400 text-sm">
+                    <div className="text-center py-12 bg-white dark:bg-[#1c1a18] rounded-2xl border border-stone-200 dark:border-[#2f2b28] text-stone-400 dark:text-stone-500 text-sm">
                       No words match "{searchQuery}"
                     </div>
                   ) : (
@@ -398,21 +436,21 @@ export default function App() {
                       {searchResults.map((card) => (
                         <div 
                           key={card.id}
-                          className="bg-white border border-stone-200 p-4 rounded-xl flex items-center justify-between"
+                          className="bg-white dark:bg-[#1c1a18] border border-stone-200 dark:border-[#2f2b28] p-4 rounded-xl flex items-center justify-between"
                         >
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-serif font-medium text-stone-900">{card.word}</span>
-                              <span className="text-[10px] font-mono uppercase text-stone-400">Day {card.dayNumber}</span>
+                              <span className="font-serif font-medium text-stone-900 dark:text-stone-100">{card.word}</span>
+                              <span className="text-[10px] font-mono uppercase text-stone-400 dark:text-stone-500">Day {card.dayNumber}</span>
                             </div>
-                            <p className="text-xs text-stone-600 mt-1">{card.definition}</p>
+                            <p className="text-xs text-stone-600 dark:text-stone-400 mt-1">{card.definition}</p>
                           </div>
                           <button
                             onClick={() => {
                               setActiveDayId(card.dayId);
                               setSearchQuery('');
                             }}
-                            className="text-xs font-mono text-stone-800 hover:underline flex items-center gap-1"
+                            className="text-xs font-mono text-stone-800 dark:text-stone-200 hover:underline flex items-center gap-1"
                           >
                             <span>Go to Day</span>
                             <ChevronRight className="w-3.5 h-3.5" />
@@ -442,8 +480,8 @@ export default function App() {
                   onDeleteDay={() => handleDeleteDay(currentDay.id)}
                 />
               ) : (
-                <div className="text-center py-20 bg-white rounded-2xl border border-stone-200">
-                  <p className="text-stone-500 text-sm font-serif">Select a day or create one to start adding words.</p>
+                <div className="text-center py-20 bg-white dark:bg-[#1c1a18] rounded-2xl border border-stone-200 dark:border-[#2f2b28]">
+                  <p className="text-stone-500 dark:text-stone-400 text-sm font-serif">Select a day or create one to start adding words.</p>
                 </div>
               )}
             </section>
@@ -452,7 +490,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-stone-200 bg-white py-6 mt-12 text-center text-xs font-mono text-stone-400">
+      <footer className="border-t border-stone-200 dark:border-[#2a2623] bg-white dark:bg-[#1a1816] py-6 mt-12 text-center text-xs font-mono text-stone-400 dark:text-stone-500 transition-colors">
         Minimalist GRE Vocabulary Builder & Spaced Practice
       </footer>
 
