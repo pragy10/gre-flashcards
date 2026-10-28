@@ -2,21 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { 
   BookMarked, 
   Plus, 
-  Calendar, 
+  Calendar as CalendarIcon, 
   Play, 
   Layers, 
   Search, 
   RotateCcw, 
-  ChevronRight,
-  TrendingUp,
-  Download,
-  Upload,
-  Cloud,
-  CloudOff,
-  Sparkles,
-  Sun,
-  Moon,
-  HelpCircle
+  ChevronRight, 
+  TrendingUp, 
+  Download, 
+  Upload, 
+  Cloud, 
+  CloudOff, 
+  Sparkles, 
+  Sun, 
+  Moon, 
+  HelpCircle,
+  LayoutGrid
 } from 'lucide-react';
 import { INITIAL_DAYS, STORAGE_KEY } from './data/sampleData';
 import { fetchDays, saveDayToCloud, syncAllDaysToCloud, deleteDayFromCloud } from './services/api';
@@ -25,6 +26,8 @@ import FlashcardPlayer from './components/FlashcardPlayer';
 import CardModal from './components/CardModal';
 import DayModal from './components/DayModal';
 import QuizModal from './components/QuizModal';
+import CalendarView from './components/CalendarView';
+import ConfirmModal from './components/ConfirmModal';
 
 const THEME_KEY = "gre_theme_mode";
 
@@ -65,6 +68,7 @@ export default function App() {
   });
 
   const [activeDayId, setActiveDayId] = useState(() => days[0]?.id || null);
+  const [mainView, setMainView] = useState('deck'); // 'deck' | 'calendar'
   const [isPlaying, setIsPlaying] = useState(false);
   const [playerMode, setPlayerMode] = useState('day'); // 'day' | 'all'
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,9 +78,21 @@ export default function App() {
   // Modals
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
+  
   const [isDayModalOpen, setIsDayModalOpen] = useState(false);
+  const [editingDay, setEditingDay] = useState(null);
+
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const [quizDay, setQuizDay] = useState(null);
+
+  // Confirm delete modal state
+  const [confirmModalConfig, setConfirmModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Delete',
+    onConfirm: () => {}
+  });
 
   // Initial load from cloud (MongoDB API) with local fallback
   useEffect(() => {
@@ -152,21 +168,31 @@ export default function App() {
     }
   };
 
-  const handleDeleteCard = (cardId) => {
-    let updatedDay = null;
-    const nextDays = days.map(d => {
-      if (d.id !== activeDayId) return d;
-      updatedDay = {
-        ...d,
-        cards: d.cards.filter(c => c.id !== cardId)
-      };
-      return updatedDay;
-    });
+  // Card Deletion with Confirmation Modal
+  const requestDeleteCard = (card) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: `Delete "${card.word}"?`,
+      message: "This card will be permanently removed from this day session.",
+      confirmText: "Delete Card",
+      onConfirm: () => {
+        let updatedDay = null;
+        const nextDays = days.map(d => {
+          if (d.id !== activeDayId) return d;
+          updatedDay = {
+            ...d,
+            cards: d.cards.filter(c => c.id !== card.id)
+          };
+          return updatedDay;
+        });
 
-    setDays(nextDays);
-    if (updatedDay) {
-      saveDayToCloud(updatedDay);
-    }
+        setDays(nextDays);
+        if (updatedDay) {
+          saveDayToCloud(updatedDay);
+        }
+        setConfirmModalConfig(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleUpdateStatus = (dayId, cardId, newStatus) => {
@@ -186,23 +212,47 @@ export default function App() {
     }
   };
 
-  // Day Actions
-  const handleCreateDay = (newDay) => {
-    setDays(prev => [...prev, newDay]);
-    setActiveDayId(newDay.id);
-    saveDayToCloud(newDay);
+  // Day Actions (Create or Edit existing day details)
+  const handleSaveDay = (dayData) => {
+    if (editingDay) {
+      // Editing existing day
+      const nextDays = days.map(d => d.id === dayData.id ? dayData : d);
+      // Re-sort by dayNumber
+      nextDays.sort((a, b) => (a.dayNumber || 0) - (b.dayNumber || 0));
+      setDays(nextDays);
+      saveDayToCloud(dayData);
+      setEditingDay(null);
+    } else {
+      // Create new day
+      const nextDays = [...days, dayData].sort((a, b) => (a.dayNumber || 0) - (b.dayNumber || 0));
+      setDays(nextDays);
+      setActiveDayId(dayData.id);
+      saveDayToCloud(dayData);
+    }
   };
 
-  const handleDeleteDay = (dayId) => {
-    if (!window.confirm("Are you sure you want to delete this day and all its words?")) return;
-    const remaining = days.filter(d => d.id !== dayId);
-    setDays(remaining);
-    deleteDayFromCloud(dayId);
-    if (remaining.length > 0) {
-      setActiveDayId(remaining[0].id);
-    } else {
-      setActiveDayId(null);
-    }
+  // Day Deletion with Confirmation Modal
+  const requestDeleteDay = (dayToDelete) => {
+    const targetDay = dayToDelete || currentDay;
+    if (!targetDay) return;
+
+    setConfirmModalConfig({
+      isOpen: true,
+      title: `Delete Day ${targetDay.dayNumber}?`,
+      message: `Are you sure you want to delete Day ${targetDay.dayNumber} ("${targetDay.title}") and all its ${targetDay.cards?.length || 0} flashcards?`,
+      confirmText: "Delete Day",
+      onConfirm: () => {
+        const remaining = days.filter(d => d.id !== targetDay.id);
+        setDays(remaining);
+        deleteDayFromCloud(targetDay.id);
+        if (remaining.length > 0) {
+          setActiveDayId(remaining[0].id);
+        } else {
+          setActiveDayId(null);
+        }
+        setConfirmModalConfig(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleExportJSON = () => {
@@ -216,12 +266,19 @@ export default function App() {
   };
 
   const handleResetSampleData = () => {
-    if (window.confirm("Reset all data to sample GRE words? Any custom additions will be replaced.")) {
-      setDays(INITIAL_DAYS);
-      setActiveDayId(INITIAL_DAYS[0].id);
-      setIsPlaying(false);
-      syncAllDaysToCloud(INITIAL_DAYS);
-    }
+    setConfirmModalConfig({
+      isOpen: true,
+      title: "Reset to Sample GRE Deck?",
+      message: "This will replace your current days with the standard 3-day GRE sample deck. Any customized entries will be overwritten.",
+      confirmText: "Reset Deck",
+      onConfirm: () => {
+        setDays(INITIAL_DAYS);
+        setActiveDayId(INITIAL_DAYS[0].id);
+        setIsPlaying(false);
+        syncAllDaysToCloud(INITIAL_DAYS);
+        setConfirmModalConfig(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   // Quiz launcher
@@ -271,13 +328,52 @@ export default function App() {
             </div>
           </div>
 
-          {/* Quick Metrics & Actions */}
+          {/* Nav Views & Actions */}
           <div className="flex items-center gap-3 text-xs font-mono">
-            <div className="hidden sm:flex items-center gap-4 text-stone-500 dark:text-stone-400 border-r border-stone-200 dark:border-[#2f2b28] pr-4">
+            {/* View switcher: Decks vs Calendar */}
+            {!isPlaying && (
+              <div className="flex bg-stone-100 dark:bg-[#282522] p-0.5 rounded-lg">
+                <button
+                  onClick={() => setMainView('deck')}
+                  className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${
+                    mainView === 'deck'
+                      ? 'bg-white dark:bg-[#1c1a18] text-stone-900 dark:text-stone-100 shadow-xs'
+                      : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Decks</span>
+                </button>
+                <button
+                  onClick={() => setMainView('calendar')}
+                  className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${
+                    mainView === 'calendar'
+                      ? 'bg-white dark:bg-[#1c1a18] text-stone-900 dark:text-stone-100 shadow-xs'
+                      : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                  }`}
+                >
+                  <CalendarIcon className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Calendar</span>
+                </button>
+              </div>
+            )}
+
+            <div className="hidden md:flex items-center gap-4 text-stone-500 dark:text-stone-400 border-r border-stone-200 dark:border-[#2f2b28] pr-4">
               <span>Total: <strong className="text-stone-900 dark:text-stone-100">{totalCards}</strong></span>
               <span>Mastered: <strong className="text-stone-900 dark:text-stone-100">{totalMastered}</strong></span>
-              <span>In Progress: <strong className="text-stone-900 dark:text-stone-100">{totalLearning}</strong></span>
             </div>
+
+            {/* Comprehensive Quiz Button in Header */}
+            {totalCards > 0 && !isPlaying && (
+              <button
+                onClick={() => handleStartQuiz(null)}
+                className="px-3 py-1.5 border border-stone-200 dark:border-[#38332e] hover:border-stone-300 dark:hover:border-stone-500 bg-white dark:bg-[#1c1a18] text-stone-800 dark:text-stone-200 rounded-lg transition-colors flex items-center gap-1.5"
+                title="Test yourself with customizable MCQ test"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Test</span>
+              </button>
+            )}
 
             {/* Dark Mode Toggle Button */}
             <button
@@ -321,8 +417,33 @@ export default function App() {
             day={playerMode === 'all' ? { id: 'all', dayNumber: 'All' } : currentDay}
             cards={playerDeck}
             onUpdateStatus={handleUpdateStatus}
-            onDeleteCard={handleDeleteCard}
+            onDeleteCard={requestDeleteCard}
             onExit={() => setIsPlaying(false)}
+          />
+        ) : mainView === 'calendar' ? (
+          /* Calendar View Page */
+          <CalendarView 
+            days={days}
+            onSelectDay={(dayId) => {
+              setActiveDayId(dayId);
+              setMainView('deck');
+            }}
+            onStartStudy={(session) => {
+              setActiveDayId(session.id);
+              setPlayerMode('day');
+              setIsPlaying(true);
+            }}
+            onStartQuiz={(session) => {
+              handleStartQuiz(session);
+            }}
+            onNewDayForDate={(dateStr) => {
+              setEditingDay({
+                dayNumber: (days.length ? Math.max(...days.map(d => d.dayNumber || 0)) : 0) + 1,
+                title: '',
+                createdAt: dateStr
+              });
+              setIsDayModalOpen(true);
+            }}
           />
         ) : (
           /* Dashboard & Day Management */
@@ -334,7 +455,10 @@ export default function App() {
                   Study Days
                 </span>
                 <button
-                  onClick={() => setIsDayModalOpen(true)}
+                  onClick={() => {
+                    setEditingDay(null);
+                    setIsDayModalOpen(true);
+                  }}
                   className="text-xs font-mono text-stone-800 dark:text-stone-200 hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -388,7 +512,10 @@ export default function App() {
                   <div className="p-4 border border-dashed border-stone-300 dark:border-stone-700 rounded-xl text-center">
                     <p className="text-xs text-stone-400 font-mono mb-2">No days added yet.</p>
                     <button
-                      onClick={() => setIsDayModalOpen(true)}
+                      onClick={() => {
+                        setEditingDay(null);
+                        setIsDayModalOpen(true);
+                      }}
                       className="text-xs font-mono text-stone-800 dark:text-stone-200 underline"
                     >
                       Create Day 1
@@ -486,9 +613,13 @@ export default function App() {
                     setEditingCard(card);
                     setIsCardModalOpen(true);
                   }}
-                  onDeleteCard={handleDeleteCard}
+                  onDeleteCard={requestDeleteCard}
                   onUpdateStatus={handleUpdateStatus}
-                  onDeleteDay={() => handleDeleteDay(currentDay.id)}
+                  onDeleteDay={() => requestDeleteDay(currentDay)}
+                  onEditDayDetails={(day) => {
+                    setEditingDay(day);
+                    setIsDayModalOpen(true);
+                  }}
                 />
               ) : (
                 <div className="text-center py-20 bg-white dark:bg-[#1c1a18] rounded-2xl border border-stone-200 dark:border-[#2f2b28]">
@@ -518,9 +649,13 @@ export default function App() {
 
       <DayModal
         isOpen={isDayModalOpen}
-        onClose={() => setIsDayModalOpen(false)}
-        onCreateDay={handleCreateDay}
+        onClose={() => {
+          setIsDayModalOpen(false);
+          setEditingDay(null);
+        }}
+        onSaveDay={handleSaveDay}
         nextDayNumber={(days.length ? Math.max(...days.map(d => d.dayNumber || 0)) : 0) + 1}
+        editingDay={editingDay}
       />
 
       <QuizModal
@@ -529,8 +664,17 @@ export default function App() {
           setIsQuizModalOpen(false);
           setQuizDay(null);
         }}
-        day={quizDay}
+        initialDay={quizDay}
         allDays={days}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        title={confirmModalConfig.title}
+        message={confirmModalConfig.message}
+        confirmText={confirmModalConfig.confirmText}
+        onConfirm={confirmModalConfig.onConfirm}
+        onCancel={() => setConfirmModalConfig(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

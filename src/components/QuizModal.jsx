@@ -5,13 +5,21 @@ import {
   CheckCircle2, 
   XCircle, 
   Award, 
-  ArrowRight,
-  HelpCircle,
-  Sparkles,
-  Volume2
+  ArrowRight, 
+  HelpCircle, 
+  Sparkles, 
+  Volume2, 
+  Settings2, 
+  CheckSquare, 
+  Square,
+  Play
 } from 'lucide-react';
 
-export default function QuizModal({ isOpen, onClose, day, allDays }) {
+export default function QuizModal({ isOpen, onClose, initialDay, allDays }) {
+  // Days selected for this test
+  const [selectedDayIds, setSelectedDayIds] = useState([]);
+  const [isConfiguring, setIsConfiguring] = useState(false);
+
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -20,17 +28,36 @@ export default function QuizModal({ isOpen, onClose, day, allDays }) {
   const [isComplete, setIsComplete] = useState(false);
   const [userAnswers, setUserAnswers] = useState([]);
 
-  // Generate quiz questions when modal opens or day changes
+  // Initialize selected days when modal opens
   useEffect(() => {
-    if (!isOpen || !day) return;
+    if (isOpen) {
+      if (initialDay) {
+        setSelectedDayIds([initialDay.id]);
+      } else if (allDays && allDays.length > 0) {
+        setSelectedDayIds(allDays.map(d => d.id));
+      }
+      setIsConfiguring(false);
+    }
+  }, [isOpen, initialDay, allDays]);
 
-    const dayCards = (day.cards || []).filter(c => c.synonyms && c.synonyms.length > 0);
-    if (dayCards.length === 0) {
+  // Generate quiz questions
+  const generateQuiz = () => {
+    const includedDays = (allDays || []).filter(d => selectedDayIds.includes(d.id));
+    const allQuizCards = [];
+    includedDays.forEach(d => {
+      (d.cards || []).forEach(c => {
+        if (c.synonyms && c.synonyms.length > 0) {
+          allQuizCards.push({ ...c, originDay: d.dayNumber });
+        }
+      });
+    });
+
+    if (allQuizCards.length === 0) {
       setQuestions([]);
       return;
     }
 
-    // Collect distractors pool from all days (synonyms & antonyms across all collected words)
+    // Collect distractors pool from all days
     const distractorPool = [];
     (allDays || []).forEach(d => {
       (d.cards || []).forEach(c => {
@@ -39,21 +66,15 @@ export default function QuizModal({ isOpen, onClose, day, allDays }) {
       });
     });
 
-    // Remove duplicates & clean strings
     const uniquePool = Array.from(new Set(distractorPool.map(w => w.trim()).filter(Boolean)));
-
-    // Fallback GRE vocabulary words if distractor pool has fewer than 10 words
     const fallbackWords = [
       "ephemeral", "pragmatic", "meticulous", "tenacious", "esoteric",
       "garrulous", "reticent", "cogent", "audacious", "lucid",
       "pellucid", "sycophant", "prosaic", "ebullient", "pedantic"
     ];
 
-    const generated = dayCards.map((card, idx) => {
-      // 1 correct synonym from this card
+    const generated = allQuizCards.map((card, idx) => {
       const correctSynonym = card.synonyms[Math.floor(Math.random() * card.synonyms.length)].trim();
-      
-      // Filter out this card's own synonyms and the word itself from distractors
       const cardSynonymsLower = (card.synonyms || []).map(s => s.toLowerCase());
       const cardWordLower = card.word.toLowerCase();
 
@@ -64,16 +85,12 @@ export default function QuizModal({ isOpen, onClose, day, allDays }) {
                !cardSynonymsLower.includes(lower);
       });
 
-      // Combine with fallback if not enough
       const combinedDistractors = candidateDistractors.length >= 3 
         ? candidateDistractors 
         : Array.from(new Set([...candidateDistractors, ...fallbackWords.filter(f => f.toLowerCase() !== cardWordLower && !cardSynonymsLower.includes(f.toLowerCase()))]));
 
-      // Shuffle & pick 3 distractors
       const shuffledDistractors = [...combinedDistractors].sort(() => Math.random() - 0.5);
       const chosenDistractors = shuffledDistractors.slice(0, 3);
-
-      // 4 options: 1 correct + 3 distractors, shuffled
       const options = [correctSynonym, ...chosenDistractors].sort(() => Math.random() - 0.5);
 
       return {
@@ -83,10 +100,10 @@ export default function QuizModal({ isOpen, onClose, day, allDays }) {
         definition: card.definition,
         correctSynonym,
         options,
+        originDay: card.originDay
       };
     });
 
-    // Shuffle question order
     setQuestions(generated.sort(() => Math.random() - 0.5));
     setCurrentIndex(0);
     setSelectedOption(null);
@@ -94,11 +111,32 @@ export default function QuizModal({ isOpen, onClose, day, allDays }) {
     setScore(0);
     setIsComplete(false);
     setUserAnswers([]);
-  }, [isOpen, day, allDays]);
+    setIsConfiguring(false);
+  };
+
+  useEffect(() => {
+    if (isOpen && selectedDayIds.length > 0) {
+      generateQuiz();
+    }
+  }, [isOpen, selectedDayIds.join(',')]);
 
   if (!isOpen) return null;
 
   const currentQ = questions[currentIndex];
+
+  const handleToggleDay = (dayId) => {
+    setSelectedDayIds(prev => 
+      prev.includes(dayId) ? prev.filter(id => id !== dayId) : [...prev, dayId]
+    );
+  };
+
+  const handleSelectAllDays = () => {
+    setSelectedDayIds((allDays || []).map(d => d.id));
+  };
+
+  const handleDeselectAllDays = () => {
+    setSelectedDayIds([]);
+  };
 
   const handleSelectOption = (option) => {
     if (isAnswered) return;
@@ -131,16 +169,6 @@ export default function QuizModal({ isOpen, onClose, day, allDays }) {
     }
   };
 
-  const handleRestart = () => {
-    setCurrentIndex(0);
-    setSelectedOption(null);
-    setIsAnswered(false);
-    setScore(0);
-    setIsComplete(false);
-    setUserAnswers([]);
-    setQuestions(prev => [...prev].sort(() => Math.random() - 0.5));
-  };
-
   const handleSpeak = (text) => {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
@@ -164,37 +192,131 @@ export default function QuizModal({ isOpen, onClose, day, allDays }) {
             </button>
             <div>
               <h3 className="font-serif text-base sm:text-lg font-medium text-stone-900 dark:text-stone-100">
-                Day {day?.dayNumber} Synonym Quiz
+                {isConfiguring ? 'Customize Test Days' : 'Synonym Recall Test'}
               </h3>
               <span className="text-[10px] font-mono text-stone-400 dark:text-stone-500">
-                Test your synonym recall
+                {isConfiguring ? 'Select which day batches to include' : `Testing across ${selectedDayIds.length} ${selectedDayIds.length === 1 ? 'day' : 'days'}`}
               </span>
             </div>
           </div>
 
-          {questions.length > 0 && !isComplete && (
-            <div className="text-xs font-mono text-stone-500 dark:text-stone-400">
-              <span className="font-semibold text-stone-900 dark:text-stone-100">{currentIndex + 1}</span> / {questions.length}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {!isComplete && (
+              <button
+                onClick={() => setIsConfiguring(!isConfiguring)}
+                className={`p-1.5 rounded-lg text-xs font-mono transition-colors flex items-center gap-1 border ${
+                  isConfiguring 
+                    ? 'border-stone-800 bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' 
+                    : 'border-stone-200 dark:border-[#38332e] text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-[#282522]'
+                }`}
+                title="Customize test days"
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Days</span>
+              </button>
+            )}
+
+            {!isConfiguring && questions.length > 0 && !isComplete && (
+              <div className="text-xs font-mono text-stone-500 dark:text-stone-400">
+                <span className="font-semibold text-stone-900 dark:text-stone-100">{currentIndex + 1}</span> / {questions.length}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Content Body */}
         <div className="p-6 overflow-y-auto flex-1">
-          {questions.length === 0 ? (
+          {/* Day Customizer Screen */}
+          {isConfiguring ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs font-mono text-stone-500 dark:text-stone-400 pb-2 border-b border-stone-100 dark:border-[#2f2b28]">
+                <span>Select Days for Question Pool:</span>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleSelectAllDays}
+                    className="hover:text-stone-900 dark:hover:text-stone-100 underline"
+                  >
+                    Select All
+                  </button>
+                  <span>•</span>
+                  <button 
+                    onClick={handleDeselectAllDays}
+                    className="hover:text-stone-900 dark:hover:text-stone-100 underline"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                {(allDays || []).map((d) => {
+                  const isChecked = selectedDayIds.includes(d.id);
+                  const validCards = (d.cards || []).filter(c => c.synonyms && c.synonyms.length > 0).length;
+
+                  return (
+                    <div
+                      key={d.id}
+                      onClick={() => handleToggleDay(d.id)}
+                      className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                        isChecked 
+                          ? 'border-stone-800 dark:border-stone-300 bg-stone-50 dark:bg-[#24211e]' 
+                          : 'border-stone-200 dark:border-[#2f2b28] hover:border-stone-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {isChecked ? (
+                          <CheckSquare className="w-4 h-4 text-stone-900 dark:text-stone-100 shrink-0" />
+                        ) : (
+                          <Square className="w-4 h-4 text-stone-400 shrink-0" />
+                        )}
+                        <div className="truncate">
+                          <span className="font-serif text-sm font-medium text-stone-900 dark:text-stone-100 block">
+                            Day {d.dayNumber}
+                          </span>
+                          <span className="text-[10px] font-mono text-stone-400 truncate block">
+                            {d.title || d.createdAt}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400 shrink-0">
+                        {validCards} words
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="pt-4 border-t border-stone-100 dark:border-[#2f2b28] flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsConfiguring(false)}
+                  className="px-4 py-2 text-xs font-mono uppercase tracking-wider text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 rounded-lg hover:bg-stone-50 dark:hover:bg-[#282522] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedDayIds.length === 0}
+                  onClick={() => generateQuiz()}
+                  className="px-5 py-2 text-xs font-mono uppercase tracking-wider bg-stone-900 text-stone-50 dark:bg-stone-100 dark:text-stone-900 rounded-lg hover:bg-stone-800 dark:hover:bg-white disabled:opacity-40 transition-colors flex items-center gap-1.5"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Start Custom Quiz</span>
+                </button>
+              </div>
+            </div>
+          ) : questions.length === 0 ? (
             <div className="text-center py-16 space-y-3">
               <HelpCircle className="w-8 h-8 text-stone-300 dark:text-stone-600 mx-auto" />
               <p className="text-sm font-serif text-stone-600 dark:text-stone-400">
-                Not enough words with synonyms in Day {day?.dayNumber} to generate a quiz.
-              </p>
-              <p className="text-xs font-mono text-stone-400 dark:text-stone-500">
-                Add words with at least one synonym to unlock quiz mode.
+                No words with synonyms found in the selected day batches.
               </p>
               <button
-                onClick={onClose}
+                onClick={() => setIsConfiguring(true)}
                 className="mt-2 px-4 py-2 text-xs font-mono uppercase tracking-wider bg-stone-900 text-stone-50 dark:bg-stone-100 dark:text-stone-900 rounded-lg"
               >
-                Close
+                Select Different Days
               </button>
             </div>
           ) : isComplete ? (
@@ -245,11 +367,18 @@ export default function QuizModal({ isOpen, onClose, day, allDays }) {
 
               <div className="flex justify-center gap-3 pt-2">
                 <button
-                  onClick={handleRestart}
+                  onClick={() => generateQuiz()}
                   className="px-4 py-2 text-xs font-mono uppercase tracking-wider border border-stone-200 dark:border-[#38332e] text-stone-800 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-[#282522] rounded-lg transition-colors flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Retake Quiz</span>
+                </button>
+                <button
+                  onClick={() => setIsConfiguring(true)}
+                  className="px-4 py-2 text-xs font-mono uppercase tracking-wider border border-stone-200 dark:border-[#38332e] text-stone-800 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-[#282522] rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <Settings2 className="w-3.5 h-3.5" />
+                  <span>Change Days</span>
                 </button>
                 <button
                   onClick={onClose}
@@ -264,9 +393,16 @@ export default function QuizModal({ isOpen, onClose, day, allDays }) {
             <div className="space-y-6">
               {/* Question Card */}
               <div className="p-6 bg-stone-50 dark:bg-[#24211e] rounded-xl border border-stone-200/80 dark:border-[#332e2a] text-center space-y-2">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 dark:text-stone-500">
-                  Select the synonym of:
-                </span>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 dark:text-stone-500">
+                    Select the synonym of:
+                  </span>
+                  {currentQ.originDay && (
+                    <span className="text-[10px] font-mono text-stone-400 dark:text-stone-500 bg-stone-200/50 dark:bg-[#282522] px-1.5 py-0.2 rounded">
+                      Day {currentQ.originDay}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center justify-center gap-2">
                   <h2 className="text-3xl sm:text-4xl font-serif text-stone-900 dark:text-stone-100 tracking-tight">
                     {currentQ.word}

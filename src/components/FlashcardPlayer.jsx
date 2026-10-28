@@ -57,10 +57,8 @@ export default function FlashcardPlayer({ day, cards, onUpdateStatus, onDeleteCa
 
   const handleDeleteCurrent = () => {
     if (!currentCard) return;
-    if (window.confirm(`Delete "${currentCard.word}"?`)) {
-      if (onDeleteCard) {
-        onDeleteCard(currentCard.id);
-      }
+    if (onDeleteCard) {
+      onDeleteCard(currentCard);
     }
   };
 

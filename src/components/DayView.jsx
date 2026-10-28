@@ -11,7 +11,8 @@ import {
   Calendar,
   Layers,
   ChevronDown,
-  HelpCircle
+  HelpCircle,
+  Settings
 } from 'lucide-react';
 
 export default function DayView({ 
@@ -22,7 +23,8 @@ export default function DayView({
   onEditCard, 
   onDeleteCard,
   onUpdateStatus,
-  onDeleteDay
+  onDeleteDay,
+  onEditDayDetails
 }) {
   const [filter, setFilter] = useState('all'); // all | learning | mastered | new
 
@@ -59,6 +61,15 @@ export default function DayView({
                 <Calendar className="w-3 h-3" />
                 {day.createdAt}
               </span>
+              <span>•</span>
+              <button
+                onClick={() => onEditDayDetails(day)}
+                className="hover:text-stone-900 dark:hover:text-stone-100 underline flex items-center gap-1"
+                title="Edit day number, topic or date"
+              >
+                <Edit3 className="w-3 h-3" />
+                <span>Edit Details</span>
+              </button>
             </div>
             <h2 className="text-2xl font-serif text-stone-900 dark:text-stone-100 tracking-tight">
               {day.title || `Day ${day.dayNumber} Vocabulary`}
@@ -253,7 +264,7 @@ export default function DayView({
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => onDeleteCard(card.id)}
+                      onClick={() => onDeleteCard(card)}
                       title="Delete Card"
                       className="p-1.5 text-stone-400 hover:text-red-700 dark:hover:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                     >

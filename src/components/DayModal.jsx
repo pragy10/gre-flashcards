@@ -1,22 +1,45 @@
-import React, { useState } from 'react';
-import { Plus, Calendar, BookOpen, Layers } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Calendar, BookOpen, Layers, X } from 'lucide-react';
 
-export default function DayModal({ isOpen, onClose, onCreateDay, nextDayNumber }) {
+export default function DayModal({ isOpen, onClose, onSaveDay, nextDayNumber, editingDay = null }) {
   const [dayNumber, setDayNumber] = useState(nextDayNumber);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (editingDay) {
+        setDayNumber(editingDay.dayNumber || 1);
+        setTitle(editingDay.title || '');
+        setDate(editingDay.createdAt || new Date().toISOString().split('T')[0]);
+      } else {
+        setDayNumber(nextDayNumber);
+        setTitle('');
+        setDate(new Date().toISOString().split('T')[0]);
+      }
+    }
+  }, [isOpen, editingDay, nextDayNumber]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onCreateDay({
-      id: `day-${Date.now()}`,
-      dayNumber: Number(dayNumber),
-      title: title.trim() || `Day ${dayNumber} Vocabulary`,
-      createdAt: date,
-      cards: []
-    });
+    if (editingDay) {
+      onSaveDay({
+        ...editingDay,
+        dayNumber: Number(dayNumber),
+        title: title.trim() || `Day ${dayNumber} Vocabulary`,
+        createdAt: date,
+      });
+    } else {
+      onSaveDay({
+        id: `day-${Date.now()}`,
+        dayNumber: Number(dayNumber),
+        title: title.trim() || `Day ${dayNumber} Vocabulary`,
+        createdAt: date,
+        cards: []
+      });
+    }
     onClose();
   };
 
@@ -25,8 +48,14 @@ export default function DayModal({ isOpen, onClose, onCreateDay, nextDayNumber }
       <div className="bg-white dark:bg-[#1c1a18] rounded-2xl w-full max-w-md border border-stone-200 dark:border-[#2f2b28] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="px-6 py-4 border-b border-stone-100 dark:border-[#2f2b28] flex items-center justify-between">
           <h3 className="font-serif text-lg font-medium text-stone-900 dark:text-stone-100">
-            Start New Day Deck
+            {editingDay ? `Edit Day ${editingDay.dayNumber} Details` : 'Start New Day Deck'}
           </h3>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 rounded-lg hover:bg-stone-50 dark:hover:bg-[#282522] transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -59,7 +88,7 @@ export default function DayModal({ isOpen, onClose, onCreateDay, nextDayNumber }
 
           <div>
             <label className="block text-[11px] font-mono uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-1">
-              Date
+              Date (Assigned Day)
             </label>
             <input
               type="date"
@@ -81,7 +110,7 @@ export default function DayModal({ isOpen, onClose, onCreateDay, nextDayNumber }
               type="submit"
               className="px-5 py-2 text-xs font-mono uppercase tracking-wider bg-stone-900 text-stone-50 dark:bg-stone-100 dark:text-stone-900 rounded-lg hover:bg-stone-800 dark:hover:bg-white transition-colors"
             >
-              Create Day
+              {editingDay ? 'Save Changes' : 'Create Day'}
             </button>
           </div>
         </form>
